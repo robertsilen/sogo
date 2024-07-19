@@ -24,7 +24,6 @@
 /* implementation of the OpenId Connect as required for a client/proxy:
    https://openid.net/developers/how-connect-works/ */
 
-#import <Foundation/NSURLSession.h>
 #import <NGObjWeb/WOResponse.h>
 
 
