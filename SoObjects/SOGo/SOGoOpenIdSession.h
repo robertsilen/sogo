@@ -60,6 +60,8 @@
   NSString *refreshToken;
   NSString *idToken;
   NSString *tokenType;
+  NSNumber *expiresIn;
+  NSNumber *refreshExpiresIn;
 }
 
 + (BOOL) checkUserConfig;
@@ -74,7 +76,9 @@
                           body: (NSData *) body;
 - (NSMutableDictionary *) fecthConfiguration;
 - (void) setAccessToken;
-- (NSString *) getToken; 
+- (NSString *) getRefreshToken; 
+- (NSString *) getToken;
+- (NSString *) getCurrentToken; 
 - (NSString *) loginUrl: (NSString *) oldLocation;
 - (NSMutableDictionary *) fetchToken: (NSString *) code redirect: (NSString *) oldLocation;
 // - (void) refreshToken;

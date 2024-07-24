@@ -317,9 +317,11 @@
       else if ([authType isEqualToString: @"openid"])
       {
         SOGoOpenIdSession* session;
-        //Apparently nothing to do here as the password is already the access_token ??
-        // In our case, we do authenticate xoauth2 <password>
-
+        NSString* currentToken;
+        //If the token has been refresh during the request, we need to use the new access_token
+        //as the one from the cookie is no more valid
+        session = [SOGoOpenIdSession OpenIdSessionWithToken: password];
+        password = [session getCurrentToken];
       }
 #if defined(SAML2_CONFIG)
       else if ([authType isEqualToString: @"saml2"])
@@ -445,6 +447,34 @@
   [authCookie setPath: [NSString stringWithFormat: @"/%@/", appName]];
   
   return authCookie;
+}
+
+- (NSArray *) getCookiesIfNeeded: (WOContext *)_ctx
+{
+  NSArray *listCookies;
+  SOGoSystemDefaults *sd;
+  NSString *authType;
+
+  sd = [SOGoSystemDefaults sharedSystemDefaults];
+  authType = [sd authenticationType];
+  if([authType isEqualToString:@"openid"])
+  {
+    NSString *currentPassword, *newPassword;
+    WOCookie* newCookie;
+    currentPassword = [self passwordInContext: _ctx];
+    newPassword = [self imapPasswordInContext: _ctx];
+    if(![newPassword isEqualToString: currentPassword])
+    {
+      newCookie = [self cookieWithUsername: [self userInContext: _ctx]
+                      andPassword:  newPassword
+                        inContext:  _ctx];
+      listCookies = [[NSArray alloc] initWithObjects: newCookie, nil];
+      [listCookies autorelease];
+    }
+    return listCookies;
+  }
+  else
+    return nil;
 }
 
 @end /* SOGoWebAuthenticator */

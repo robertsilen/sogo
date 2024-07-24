@@ -516,11 +516,11 @@ static const NSString *kJwtKey = @"jwt";
 {
   WOResponse *response;
   NSString *login, *redirectLocation, *serverUrl;
-  NSString *sessionState, *code;
+  NSString *sessionState, *code, *refreshTokenValue;
   NSURL *newLocation, *oldLocation;
   NSDictionary *formValues;
   SOGoUser *loggedInUser;
-  WOCookie *opendIdCookie, *opendIdCookieLocation;
+  WOCookie *opendIdCookie, *opendIdCookieLocation, *openIdRefreshCookie;
   WORequest *rq;
   SOGoWebAuthenticator *auth;
   SOGoOpenIdSession *openIdSession;
@@ -528,6 +528,7 @@ static const NSString *kJwtKey = @"jwt";
 
   opendIdCookie = nil;
   opendIdCookieLocation = nil;
+  openIdRefreshCookie = nil;
   newLocation = nil;
 
   openIdSession = [SOGoOpenIdSession OpenIdSession];
@@ -575,10 +576,27 @@ static const NSString *kJwtKey = @"jwt";
       newLocation = [rq cookieValueForKey: @"openid-location"];
       opendIdCookieLocation = [self _authLocationCookie: YES withName: @"openid-location"];
     }
+    // else if((formValues = [rq formValues]) && [formValues objectForKey: @"action"])
+    // {
+    //   value = [formValues objectForKey: @"action"];
+    //   if ([value isKindOfClass: [NSArray class]])
+    //     code = [value lastObject];
+    //   else
+    //     code = value;
+    //   if([code isEqualToString:@"redirect"])
+    //   {
+    //     //this action onlye serve to make a redirection to openId server after a GET request
+    //     newLocation = [openIdSession loginUrl: redirectLocation];
+    //   }
+    //}
     else
     {
-      //You get here the first time you access sogo, it redirect to your openidserver
-      newLocation = [openIdSession loginUrl: redirectLocation];
+      // //You get here the first time you access sogo, it redirect to last location
+      // if([[rq method] isEqualToString: @"POST"])
+      //   //To avoid making a redirection to openid server after a post request, we first redirect to a get method
+      //   newLocation = [NSString stringWithFormat: @"%@?action=redirect", redirectLocation];
+      // else
+        newLocation = [openIdSession loginUrl: redirectLocation];
       opendIdCookieLocation = [self _authLocationCookie: NO withName: @"openid-location"];
     }
   }
@@ -599,6 +617,7 @@ static const NSString *kJwtKey = @"jwt";
     [response addCookie: opendIdCookie];
   if (opendIdCookieLocation)
     [response addCookie: opendIdCookieLocation];
+  //[response setStatus: 303];
   return response;
 }
 

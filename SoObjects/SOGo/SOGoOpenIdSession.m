@@ -18,26 +18,16 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#import <curl/curl.h>
-
-#import <DOM/DOMElement.h>
-#import <DOM/DOMDocument.h>
-#import <DOM/DOMText.h>
-
-#import <NGObjWeb/WOApplication.h>
 #import <NGObjWeb/WOHTTPConnection.h>
 #import <NGObjWeb/WORequest.h>
-#import <NGObjWeb/WOContext.h>
 #import <NGObjWeb/WOResponse.h>
 #import <NGExtensions/NSObject+Logs.h>
 
-#import <SaxObjC/SaxObjectDecoder.h>
-#import <SaxObjC/SaxXMLReaderFactory.h>
+#import <GDLContentStore/GCSFolderManager.h>
 
 #import "NSDictionary+Utilities.h"
 #import "NSString+Utilities.h"
 #import "SOGoCache.h"
-#import "SOGoObject.h"
 #import "SOGoSystemDefaults.h"
 
 #import "SOGoOpenIdSession.h"
@@ -47,10 +37,16 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
 @implementation SOGoOpenIdSession
 
 /// Check if all required parameters to set up a OpenIdSession are in sogo.conf
+
 + (BOOL) checkUserConfig
 {
   SOGoSystemDefaults *sd;
 
+  if(nil == [[GCSFolderManager defaultFolderManager] openIdFolder])
+  {
+    [self errorWithFormat: @"Something wrong with the table defined by OCSOpenIdURL"];
+    return NO;
+  }
   sd = [SOGoSystemDefaults sharedSystemDefaults];
   return ([sd openIdConfigUrl] && [sd openIdScope]  && [sd openIdClient]  && [sd openIdClientSecret]);
 }
@@ -122,7 +118,8 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
     {
       NSLog(@"OpenId perform request: %@ %@", method, [endpoint hostlessURL]);
       NSLog(@"OpenId perform request, headers %@", headers);
-      NSLog(@"OpenId perform request: content %@", [[NSString alloc] initWithData:body encoding:NSUTF8StringEncoding]);
+      if(body)
+        NSLog(@"OpenId perform request: content %@", [[NSString alloc] initWithData:body encoding:NSUTF8StringEncoding]);
     }
       
     httpConnection = [[WOHTTPConnection alloc] initWithURL: url];
@@ -343,6 +340,11 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
   return self->endSessionEndpoint;
 }
 
+- (NSString*) getRefreshToken
+{
+  return self->refreshToken;
+}
+
 - (NSString*) getToken
 {
   return self->accessToken;
@@ -351,6 +353,23 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
 - (void) setAccessToken: (NSString* ) token
 {
   self->accessToken = token;
+}
+
+
+- (NSString *) getCurrentToken
+{
+  NSString *currentToken;
+
+  //See if the current token has been refreshed
+  currentToken = [[[GCSFolderManager defaultFolderManager] openIdFolder] getNewToken: self->accessToken];
+
+  if(currentToken)
+  {
+    //be sure the old token has been cleaned
+    [[[GCSFolderManager defaultFolderManager] openIdFolder] deleteOpenIdSessionFor: self->accessToken];
+    return currentToken;
+  }
+  return self->accessToken;
 }
 
 - (NSMutableDictionary *) fetchToken: (NSString * ) code redirect: (NSString *) oldLocation
@@ -364,6 +383,7 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
   NSURL *url;
 
   result = [NSMutableDictionary dictionary];
+  [result setObject: @"ok" forKey: @"error"];
   
   location = self->tokenEndpoint;
   url = [NSURL URLWithString: location];
@@ -389,14 +409,89 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
       {
         content = [response contentString];
         tokenRet = [content objectFromJSONString];
+        if (SOGoOpenIDDebugEnabled)
+        {
+          NSLog(@"fetch token response: %@", tokenRet);
+        }
         self->accessToken = [tokenRet objectForKey: @"access_token"];
         self->refreshToken = [tokenRet objectForKey: @"refresh_token"];
+        self->refreshExpiresIn = [tokenRet objectForKey: @"refresh_expires_in"];
         self->idToken = [tokenRet objectForKey: @"id_token"];
         self->tokenType = [tokenRet objectForKey: @"token_type"];
+        self->expiresIn = [tokenRet objectForKey: @"expires_in"];
       }
       else
       {
         [self logWithFormat: @"Error during fetching the token (status %d), response: %@", status, response];
+      }
+    }
+    else
+    {
+        [result setObject: @"http-error" forKey: @"error"];
+    }
+  }
+  else
+    [result setObject: @"invalid-url" forKey: @"error"];
+  
+  return result;
+}
+
+- (NSMutableDictionary *) refreshToken: (NSString * ) userRefreshToken
+{
+  NSString *location, *form, *content;
+  WOResponse *response;
+  NSUInteger status;
+  NSMutableDictionary *result;
+  NSDictionary *headers;
+  NSDictionary *refreshTokenRet;
+  NSURL *url;
+
+  result = [NSMutableDictionary dictionary];
+  [result setObject: @"ok" forKey: @"error"];
+  
+  if(!userRefreshToken || [userRefreshToken length] == 0)
+  {
+    [result setObject: @"invalid-token" forKey: @"error"];
+    return result;
+  }
+
+  location = self->tokenEndpoint;
+  url = [NSURL URLWithString: location];
+  if (url)
+  {
+    form = @"grant_type=refresh_token";
+    form = [form stringByAppendingFormat: @"&scope=%@", self->openIdScope];
+    form = [form stringByAppendingFormat: @"&refresh_token=%@", userRefreshToken];
+    form = [form stringByAppendingFormat: @"&client_secret=%@", self->openIdClientSecret];
+    form = [form stringByAppendingFormat: @"&client_id=%@", self->openIdClient];
+
+    headers = [NSDictionary dictionaryWithObject: @"application/x-www-form-urlencoded"  forKey: @"content-type"];
+    
+    response = [self _performOpenIdRequest: location
+                      method: @"POST"
+                      headers: headers
+                        body: [form dataUsingEncoding:NSUTF8StringEncoding]];
+
+    if (response)
+    {
+      status = [response status];
+      if(status >= 200 && status <300)
+      {
+        content = [response contentString];
+        refreshTokenRet = [content objectFromJSONString];
+        if (SOGoOpenIDDebugEnabled)
+        {
+          NSLog(@"refresh token response: %@", refreshTokenRet);
+        }
+        self->accessToken = [refreshTokenRet objectForKey: @"access_token"];
+        self->refreshToken = [refreshTokenRet objectForKey: @"refresh_token"];
+        self->refreshExpiresIn = [refreshTokenRet objectForKey: @"refresh_expires_in"];
+        self->tokenType = [refreshTokenRet objectForKey: @"token_type"];
+        self->expiresIn = [refreshTokenRet objectForKey: @"expires_in"];
+      }
+      else
+      {
+        [self logWithFormat: @"Error during refreshing the token (status %d), response: %@", status, response];
       }
     }
     else
@@ -481,18 +576,56 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
 
 - (NSString *) login
 {
-  NSMutableDictionary *resultUserInfo;
-  NSString *error;
+  NSMutableDictionary *resultUserInfo, *resultResfreh;
+  NSString* _oldAccessToken;
 
   resultUserInfo = [self fetchUserInfo];
   if ([[resultUserInfo objectForKey: @"error"] isEqualToString: @"ok"])
-  {
+  { 
+    //Save some infos as the refresh token to the database
+    [[[GCSFolderManager defaultFolderManager] openIdFolder] writeOpenIdSession: self->accessToken
+                                                              withRefreshToken: self->refreshToken
+                                                                    withExpire: self->expiresIn
+                                                             withRefreshExpire: self->refreshExpiresIn];
     return [resultUserInfo objectForKey: @"login"];
   }
   else
   {
+    //try to refresh
+    if(self->accessToken)
+    {
+      self->refreshToken = [[[GCSFolderManager defaultFolderManager] openIdFolder] getRefreshToken: self->accessToken];
+      //remove old session
+      [[[GCSFolderManager defaultFolderManager] openIdFolder] deleteOpenIdSessionFor: self->accessToken];
+    }
+    if(self->refreshToken)
+    {
+      _oldAccessToken = self->accessToken;
+      resultResfreh = [self refreshToken: self->refreshToken];
+      if ([[resultResfreh objectForKey: @"error"] isEqualToString: @"ok"])
+      {
+        resultUserInfo = [self fetchUserInfo];
+        if ([[resultUserInfo objectForKey: @"error"] isEqualToString: @"ok"])
+        {
+          [[[GCSFolderManager defaultFolderManager] openIdFolder] writeOpenIdSession: self->accessToken
+                                                                      withOldSession: _oldAccessToken
+                                                                    withRefreshToken: self->refreshToken
+                                                                          withExpire: self->expiresIn
+                                                                   withRefreshExpire: self->refreshExpiresIn];
+          return [resultUserInfo objectForKey: @"login"];
+        }
+      }
+    }
+
+    //The acces token hasn't work, delete the session in database if needed
+    if(self->accessToken)
+    {
+      [[[GCSFolderManager defaultFolderManager] openIdFolder] deleteOpenIdSessionFor: self->accessToken];
+    }
+
     [self errorWithFormat: @"Can't get user email from profile because: %@", [resultUserInfo objectForKey: @"error"]];
   }
+
   return @"anonymous";
 }
 
