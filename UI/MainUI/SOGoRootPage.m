@@ -565,7 +565,7 @@ static const NSString *kJwtKey = @"jwt";
       else
         code = value;
       [openIdSession fetchToken: code redirect: redirectLocation];
-      login = [openIdSession login];
+      login = [openIdSession login: @""];
       if ([login length])
       {
         auth = [[WOApplication application] authenticatorInContext: context];

@@ -151,7 +151,7 @@
   {
     openIdSession = [SOGoOpenIdSession OpenIdSessionWithToken: _pwd];
     if (openIdSession)
-      rc = [[openIdSession checkLogin: _login] isEqualToString: _login];
+      rc = [[openIdSession login: _login] isEqualToString: _login];
     else
       rc = NO;
   }
@@ -451,7 +451,7 @@
 
 - (NSArray *) getCookiesIfNeeded: (WOContext *)_ctx
 {
-  NSArray *listCookies;
+  NSArray *listCookies = nil;
   SOGoSystemDefaults *sd;
   NSString *authType;
 
@@ -459,19 +459,29 @@
   authType = [sd authenticationType];
   if([authType isEqualToString:@"openid"])
   {
-    NSString *currentPassword, *newPassword;
+    NSString *currentPassword, *newPassword, *username;
+    SOGoOpenIdSession *openIdSession;
+
     WOCookie* newCookie;
     currentPassword = [self passwordInContext: _ctx];
-    newPassword = [self imapPasswordInContext: _ctx];
-    if(![newPassword isEqualToString: currentPassword])
+    newPassword = [self imapPasswordInContext: _ctx forURL: nil forceRenew: NO];
+    if(currentPassword && newPassword && ![newPassword isEqualToString: currentPassword])
     {
-      newCookie = [self cookieWithUsername: [self userInContext: _ctx]
-                      andPassword:  newPassword
-                        inContext:  _ctx];
+      openIdSession = [SOGoOpenIdSession OpenIdSessionWithToken: newPassword];
+      if (openIdSession)
+        username = [openIdSession login: @""]; //Force to refresh the name
+      else
+        username = [[self userInContext: _ctx] login];
+      newCookie = [self cookieWithUsername: username
+                               andPassword: newPassword
+                                 inContext: _ctx];
       listCookies = [[NSArray alloc] initWithObjects: newCookie, nil];
       [listCookies autorelease];
     }
-    return listCookies;
+    if(listCookies && [listCookies isKindOfClass:[NSArray class]] && [listCookies count] > 0)
+      return listCookies;
+    else
+      return nil;
   }
   else
     return nil;

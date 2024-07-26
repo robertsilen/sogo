@@ -84,8 +84,8 @@
 // - (void) refreshToken;
 - (NSString *) logoutUrl;
 - (NSMutableDictionary *) fetchUserInfo;
-- (NSString *) login;
-- (NSString *) checkLogin: (NSString *) identifier;
+- (NSString *) _login;
+- (NSString *) login: (NSString *) identifier;
 
 
 @end

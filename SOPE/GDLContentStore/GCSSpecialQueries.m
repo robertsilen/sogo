@@ -95,7 +95,7 @@
   return nil;
 }
 
-- (NSString *) createOpendIdFolderWithName: (NSString *) tableName
+- (NSString *) createOpenIdFolderWithName: (NSString *) tableName
 {
   [self subclassResponsibility: _cmd];
 

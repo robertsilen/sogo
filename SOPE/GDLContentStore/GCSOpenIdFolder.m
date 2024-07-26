@@ -108,7 +108,7 @@ static NSString *openIdFolderURLString = nil;
   static EOEntity *entity = nil;
   EOAttribute *attribute;
   NSString *tableName;
-  NSString *columns[] = {@"c_user_session", @"c_session_started", @"c_refresh_token", @"c_acces_token_expires_in", @"c_refresh_token_expires_in", nil };
+  NSString *columns[] = {@"c_user_session", @"c_old_session", @"c_session_started", @"c_refresh_token", @"c_acces_token_expires_in", @"c_refresh_token_expires_in", nil };
   NSString **column;
   NSMutableArray *keys;
   NSDictionary *types;
@@ -251,7 +251,7 @@ static NSString *openIdFolderURLString = nil;
 {
   NSDictionary *r;
 
-  r = [self recordForEntryWithKey: _user_session useOldSession: NO];
+  r = [self recordForSession: _user_session useOldSession: NO];
   if (r && [r objectForKey:@"c_refresh_token"])
     return [r objectForKey:@"c_refresh_token"];
 
@@ -261,9 +261,9 @@ static NSString *openIdFolderURLString = nil;
 - (NSString *) getNewToken: (NSString *) _old_session
 {
   NSDictionary *r;
-  r = [self recordForEntryWithKey: _old_session useOldSession: YES];
-  if (r && [r objectForKey:@"c_access_token"])
-    return [r objectForKey:@"c_access_token"];
+  r = [self recordForSession: _old_session useOldSession: YES];
+  if (r && [r objectForKey:@"c_user_session"])
+    return [r objectForKey:@"c_user_session"];
 
   return nil;
 }
@@ -278,7 +278,7 @@ static NSString *openIdFolderURLString = nil;
   NSDictionary *record, *newRecord;
   NSException *error;
   NSCalendarDate *nowDate;
-  int now;
+  int now, nowExpire, nowRefreshExpire;
   EOAdaptorChannel *tc;
   EOAdaptorContext *context;
   EOEntity *entity;
@@ -292,25 +292,30 @@ static NSString *openIdFolderURLString = nil;
 
     nowDate = [NSCalendarDate date];
     now = (nowDate ? (int)[nowDate timeIntervalSince1970] : 0);
+    nowExpire = now + [_expire intValue];
+    if(_refresh_expire)
+      nowRefreshExpire = now + [_refresh_expire intValue];
+    else
+      nowRefreshExpire = -1;
+    if(!_old_session)
+      _old_session = @"";
+
     newRecord = [NSDictionary dictionaryWithObjectsAndKeys: _user_session, @"c_user_session",
                       _old_session, @"c_old_session",
-                      now, @"c_session_started",
+                      [NSNumber numberWithInt:now], @"c_session_started",
                       _refresh_token, @"c_refresh_token",
-                      now + [_expire intvalue], @"c_acces_token_expires_in",
-                      now + [_refresh_expire intvalue], @"c_refresh_token_expires_in",
+                      [NSNumber numberWithInt:nowExpire] , @"c_acces_token_expires_in",
+                      [NSNumber numberWithInt:nowRefreshExpire] , @"c_refresh_token_expires_in",
                       nil];
-    record = [self recordForEntryWithKey: _user_session useOldSession: NO];
+    record = [self recordForSession: _user_session useOldSession: NO];
     entity = [self _storeTableEntityForChannel: tc];
     [context beginTransaction];
-    if (record)
+    if (!record)
     {
-      qualifier = [[EOSQLQualifier alloc] initWithEntity: entity
-                                          qualifierFormat: @"c_user_session='%@'", _user_session];
-      [qualifier autorelease];
-      error = [tc updateRowX: newRecord describedByQualifier: qualifier];
-    }
-    else
+      //If the session already exist no need to update it as it is unique
       error = [tc insertRowX: newRecord forEntity: entity];
+    }
+      
     if (error)
     {
       [context rollbackTransaction];

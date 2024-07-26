@@ -435,6 +435,8 @@
     SOGoOpenIdSession* session;
     session = [SOGoOpenIdSession OpenIdSession];
     redirectURL = [session logoutUrl];
+    //delete openid session in database
+    
   }
 #if defined(SAML2_CONFIG)
   else if ([[sd authenticationType] isEqualToString: @"saml2"])

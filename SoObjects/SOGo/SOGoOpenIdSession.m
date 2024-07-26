@@ -574,7 +574,7 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
 }
 
 
-- (NSString *) login
+- (NSString *) _login
 {
   NSMutableDictionary *resultUserInfo, *resultResfreh;
   NSString* _oldAccessToken;
@@ -584,6 +584,7 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
   { 
     //Save some infos as the refresh token to the database
     [[[GCSFolderManager defaultFolderManager] openIdFolder] writeOpenIdSession: self->accessToken
+                                                                withOldSession: nil
                                                               withRefreshToken: self->refreshToken
                                                                     withExpire: self->expiresIn
                                                              withRefreshExpire: self->refreshExpiresIn];
@@ -629,7 +630,7 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
   return @"anonymous";
 }
 
-- (BOOL) checkLogin: (NSString *) email
+- (BOOL) login: (NSString *) email
 {
   //Check if we need to fetch userinfo
   if(self->userTokenInterval > 0 && [self _loadUserFromCache: email])
@@ -638,7 +639,7 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
   }
   else
   {
-    return [self login];
+    return [self _login];
   }
 
 }
