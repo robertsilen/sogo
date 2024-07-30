@@ -218,7 +218,7 @@
        @" c_old_session VARCHAR(4096) NULL,"
        @" c_session_started INT4 NOT NULL,"
        @" c_refresh_token VARCHAR(4096) NULL,"
-       @" c_acces_token_expires_in INT4 NOT NULL,"
+       @" c_access_token_expires_in INT4 NOT NULL,"
        @" c_refresh_token_expires_in INT4 NULL)");
 
   return [NSString stringWithFormat: sqlFolderFormat, tableName];
@@ -235,7 +235,7 @@
       [types setObject: @"varchar" forKey: @"c_old_session"];
       [types setObject: @"int" forKey: @"c_session_started"];
       [types setObject: @"varchar" forKey: @"c_refresh_token"];
-      [types setObject: @"int" forKey: @"c_acces_token_expires_in"];
+      [types setObject: @"int" forKey: @"c_access_token_expires_in"];
       [types setObject: @"int" forKey: @"c_refresh_token_expires_in"];
     }
 
@@ -379,7 +379,7 @@
        @" c_old_session VARCHAR(4096) NULL,"
        @" c_session_started INT4 NOT NULL,"
        @" c_refresh_token VARCHAR(4096) NULL,"
-       @" c_acces_token_expires_in INT4 NOT NULL,"
+       @" c_access_token_expires_in INT4 NOT NULL,"
        @" c_refresh_token_expires_in INT4 NULL)");
 
   return [NSString stringWithFormat: sqlFolderFormat, tableName];
@@ -396,7 +396,7 @@
       [types setObject: @"varchar" forKey: @"c_old_session"];
       [types setObject: @"int" forKey: @"c_session_started"];
       [types setObject: @"varchar" forKey: @"c_refresh_token"];
-      [types setObject: @"int" forKey: @"c_acces_token_expires_in"];
+      [types setObject: @"int" forKey: @"c_access_token_expires_in"];
       [types setObject: @"int" forKey: @"c_refresh_token_expires_in"];
     }
 
@@ -540,7 +540,7 @@
        @" c_old_session VARCHAR2(4096) NULL,"
        @" c_session_started INTEGER NOT NULL,"
        @" c_refresh_token VARCHAR2(4096) NULL,"
-       @" c_acces_token_expires_in INTEGER NOT NULL,"
+       @" c_access_token_expires_in INTEGER NOT NULL,"
        @" c_refresh_token_expires_in INTEGER NULL)");
 
   return [NSString stringWithFormat: sqlFolderFormat, tableName];
@@ -557,7 +557,7 @@
       [types setObject: @"varchar2" forKey: @"c_old_session"];
       [types setObject: @"integer" forKey: @"c_session_started"];
       [types setObject: @"varchar2" forKey: @"c_refresh_token"];
-      [types setObject: @"integer" forKey: @"c_acces_token_expires_in"];
+      [types setObject: @"integer" forKey: @"c_access_token_expires_in"];
       [types setObject: @"integer" forKey: @"c_refresh_token_expires_in"];
     }
 

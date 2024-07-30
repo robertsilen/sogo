@@ -23,6 +23,7 @@
 #import <NGObjWeb/WOResponse.h>
 #import <NGExtensions/NSObject+Logs.h>
 
+#import <GDLContentStore/GCSOpenIdFolder.h>
 #import <GDLContentStore/GCSFolderManager.h>
 
 #import "NSDictionary+Utilities.h"
@@ -574,6 +575,15 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
   return result;
 }
 
+
+
++ (void) deleteValueForSessionKey: (NSString *) theSessionKey
+{
+  GCSOpenIdFolder *folder;
+  
+  folder = [[GCSFolderManager defaultFolderManager] openIdFolder];
+  [folder deleteOpenIdSessionFor: theSessionKey];
+}
 
 - (NSString *) _login
 {

@@ -108,7 +108,7 @@ static NSString *openIdFolderURLString = nil;
   static EOEntity *entity = nil;
   EOAttribute *attribute;
   NSString *tableName;
-  NSString *columns[] = {@"c_user_session", @"c_old_session", @"c_session_started", @"c_refresh_token", @"c_acces_token_expires_in", @"c_refresh_token_expires_in", nil };
+  NSString *columns[] = {@"c_user_session", @"c_old_session", @"c_session_started", @"c_refresh_token", @"c_access_token_expires_in", @"c_refresh_token_expires_in", nil };
   NSString **column;
   NSMutableArray *keys;
   NSDictionary *types;
@@ -142,7 +142,7 @@ static NSString *openIdFolderURLString = nil;
       [keys addObject: [entity attributeNamed: @"c_old_session"]];
       [keys addObject: [entity attributeNamed: @"c_session_started"]];
       [keys addObject: [entity attributeNamed: @"c_refresh_token"]];
-      [keys addObject: [entity attributeNamed: @"c_acces_token_expires_in"]];
+      [keys addObject: [entity attributeNamed: @"c_access_token_expires_in"]];
       [keys addObject: [entity attributeNamed: @"c_refresh_token_expires_in"]];
       [entity setClassProperties: keys];
       [entity setAttributesUsedForLocking: [NSArray array]];
@@ -198,7 +198,7 @@ static NSString *openIdFolderURLString = nil;
     c_user_session              varchar(255)  NOT NULL,
     c_session_started           int(11)       NOT NULL,
     c_refresh_token             varchar(4096) DEFAULT '',
-    c_acces_token_expires_in    int(11)       NOT NULL,
+    c_access_token_expires_in    int(11)       NOT NULL,
     c_refresh_token_expires_in  int(11)       DEFAULT NULL,
 */
 
@@ -304,7 +304,7 @@ static NSString *openIdFolderURLString = nil;
                       _old_session, @"c_old_session",
                       [NSNumber numberWithInt:now], @"c_session_started",
                       _refresh_token, @"c_refresh_token",
-                      [NSNumber numberWithInt:nowExpire] , @"c_acces_token_expires_in",
+                      [NSNumber numberWithInt:nowExpire] , @"c_access_token_expires_in",
                       [NSNumber numberWithInt:nowRefreshExpire] , @"c_refresh_token_expires_in",
                       nil];
     record = [self recordForSession: _user_session useOldSession: NO];

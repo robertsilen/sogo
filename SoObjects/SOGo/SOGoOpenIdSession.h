@@ -67,7 +67,7 @@
 
 + (BOOL) checkUserConfig;
 + (SOGoOpenIdSession *) OpenIdSession;
-// + (SOGoOpenIdSession *) OpenIdSessionWithToken: (NSString *) token;
++ (void) deleteValueForSessionKey: (NSString *) theSessionKey;
 
 - (void) initialize;
 - (BOOL) sessionIsOK;
@@ -82,7 +82,7 @@
 - (NSString *) getCurrentToken; 
 - (NSString *) loginUrl: (NSString *) oldLocation;
 - (NSMutableDictionary *) fetchToken: (NSString *) code redirect: (NSString *) oldLocation;
-// - (void) refreshToken;
+
 - (NSString *) logoutUrl;
 - (NSMutableDictionary *) fetchUserInfo;
 - (NSString *) _login;
