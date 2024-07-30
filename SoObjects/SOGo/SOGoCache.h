@@ -120,7 +120,7 @@
 - (void) removeCASSessionWithTicket: (NSString *) ticket;
 
 // OpenId Support
-- (NSString *) opendIdSessionFromServer: (NSString *) endpoint;
+- (NSString *) openIdSessionFromServer: (NSString *) endpoint;
 - (void) setOpenIdSession: (NSString *) openIdSession
          forServer: (NSString *) endpoint;
 - (NSString *) userOpendIdSessionFromServer: (NSString *) endpoint;

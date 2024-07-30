@@ -78,12 +78,13 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
   openIdSessionIsOK = NO;
   if ([[self class] checkUserConfig])
   {
-    openIdConfigUrl    = [sd openIdConfigUrl];
-    openIdScope        = [sd openIdScope];
-    openIdClient       = [sd openIdClient];
-    openIdClientSecret = [sd openIdClientSecret];
-    openIdEmailParam   = [sd openIdEmailParam];
-    userTokenInterval  = [sd openIdTokenCheckInterval];
+    openIdConfigUrl          = [sd openIdConfigUrl];
+    openIdScope              = [sd openIdScope];
+    openIdClient             = [sd openIdClient];
+    openIdClientSecret       = [sd openIdClientSecret];
+    openIdEmailParam         = [sd openIdEmailParam];
+    openIdEnableRefreshToken = [sd openIdEnableRefreshToken];
+    userTokenInterval        = [sd openIdTokenCheckInterval];
 
     [self _loadSessionFromCache];
 
@@ -245,7 +246,7 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
   NSDictionary *sessionDict;
 
   cache = [SOGoCache sharedCache];
-  jsonSession = [cache opendIdSessionFromServer: self->openIdConfigUrl];
+  jsonSession = [cache openIdSessionFromServer: self->openIdConfigUrl];
   if ([jsonSession length])
   {
     sessionDict = [jsonSession objectFromJSONString];
@@ -590,7 +591,7 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
                                                              withRefreshExpire: self->refreshExpiresIn];
     return [resultUserInfo objectForKey: @"login"];
   }
-  else
+  else if(openIdEnableRefreshToken)
   {
     //try to refresh
     if(self->accessToken)
@@ -625,6 +626,11 @@ static BOOL SOGoOpenIDDebugEnabled = YES;
     }
 
     [self errorWithFormat: @"Can't get user email from profile because: %@", [resultUserInfo objectForKey: @"error"]];
+  }
+  else
+  {
+    //remove old session
+    [[[GCSFolderManager defaultFolderManager] openIdFolder] deleteOpenIdSessionFor: self->accessToken];
   }
 
   return @"anonymous";

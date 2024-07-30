@@ -686,7 +686,7 @@ static memcached_st *handle = NULL;
 
 // OpenId support
 
-- (NSString *) opendIdSessionFromServer: (NSString *) endpoint
+- (NSString *) openIdSessionFromServer: (NSString *) endpoint
 {
   return [self valueForKey: [NSString stringWithFormat: @"openId:%@", endpoint]];
 }

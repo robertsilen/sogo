@@ -46,6 +46,7 @@
   NSString *openIdClient;
   NSString *openIdClientSecret;
   NSString *openIdEmailParam;
+  BOOL openIdEnableRefreshToken;
 
   //From request to well-known/configuration
   NSString *authorizationEndpoint;

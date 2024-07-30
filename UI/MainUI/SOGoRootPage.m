@@ -520,14 +520,14 @@ static const NSString *kJwtKey = @"jwt";
   NSURL *newLocation, *oldLocation;
   NSDictionary *formValues;
   SOGoUser *loggedInUser;
-  WOCookie *opendIdCookie, *opendIdCookieLocation, *openIdRefreshCookie;
+  WOCookie *openIdCookie, *openIdCookieLocation, *openIdRefreshCookie;
   WORequest *rq;
   SOGoWebAuthenticator *auth;
   SOGoOpenIdSession *openIdSession;
   id value;
 
-  opendIdCookie = nil;
-  opendIdCookieLocation = nil;
+  openIdCookie = nil;
+  openIdCookieLocation = nil;
   openIdRefreshCookie = nil;
   newLocation = nil;
 
@@ -569,12 +569,12 @@ static const NSString *kJwtKey = @"jwt";
       if ([login length])
       {
         auth = [[WOApplication application] authenticatorInContext: context];
-        opendIdCookie = [auth cookieWithUsername: login
+        openIdCookie = [auth cookieWithUsername: login
                                   andPassword: [openIdSession getToken]
                                     inContext: context];
       }
       newLocation = [rq cookieValueForKey: @"openid-location"];
-      opendIdCookieLocation = [self _authLocationCookie: YES withName: @"openid-location"];
+      openIdCookieLocation = [self _authLocationCookie: YES withName: @"openid-location"];
     }
     // else if((formValues = [rq formValues]) && [formValues objectForKey: @"action"])
     // {
@@ -597,7 +597,7 @@ static const NSString *kJwtKey = @"jwt";
       //   newLocation = [NSString stringWithFormat: @"%@?action=redirect", redirectLocation];
       // else
         newLocation = [openIdSession loginUrl: redirectLocation];
-      opendIdCookieLocation = [self _authLocationCookie: NO withName: @"openid-location"];
+      openIdCookieLocation = [self _authLocationCookie: NO withName: @"openid-location"];
     }
   }
   else
@@ -613,10 +613,10 @@ static const NSString *kJwtKey = @"jwt";
   }
 
   response = [self redirectToLocation: newLocation];
-  if (opendIdCookie)
-    [response addCookie: opendIdCookie];
-  if (opendIdCookieLocation)
-    [response addCookie: opendIdCookieLocation];
+  if (openIdCookie)
+    [response addCookie: openIdCookie];
+  if (openIdCookieLocation)
+    [response addCookie: openIdCookieLocation];
   //[response setStatus: 303];
   return response;
 }

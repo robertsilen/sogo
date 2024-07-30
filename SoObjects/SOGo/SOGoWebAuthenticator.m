@@ -457,7 +457,7 @@
 
   sd = [SOGoSystemDefaults sharedSystemDefaults];
   authType = [sd authenticationType];
-  if([authType isEqualToString:@"openid"])
+  if([authType isEqualToString:@"openid"] && [sd openIdEnableRefreshToken])
   {
     NSString *currentPassword, *newPassword, *username;
     SOGoOpenIdSession *openIdSession;

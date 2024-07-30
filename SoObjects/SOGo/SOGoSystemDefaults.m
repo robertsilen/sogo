@@ -624,7 +624,7 @@ NSComparisonResult languageSort(id el1, id el2, void *context)
   return emailParam;
 }
 
-- (NSString *) openIdLogoutEnabled
+- (BOOL) openIdLogoutEnabled
 {
   return [self boolForKey: @"SOGoOpenIdLogoutEnabled"];
 }
@@ -642,6 +642,11 @@ NSComparisonResult languageSort(id el1, id el2, void *context)
     v = 0;
 
   return v;
+}
+
+- (BOOL) openIdEnableRefreshToken
+{
+  return [self boolForKey: @"SOGoOpenIdEnableRefreshToken"];
 }
 
 /* SAML2 support */
